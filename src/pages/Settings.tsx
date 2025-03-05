@@ -35,14 +35,36 @@ const Settings: React.FC = () => {
     alert('Scoring criteria updated successfully!');
   };
   
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+  
   const handleEmailSettingsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isValidEmail(emailSettings.senderEmail)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+    
     // In a real app, this would save to a backend
     alert('Email settings updated successfully!');
   };
   
+  const isValidPhoneNumber = (phone: string) => {
+    const phoneRegex = /^\+\d{1,3}\s?\d{9,15}$/;
+    return phoneRegex.test(phone);
+  };
+  
   const handleWhatsappSettingsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isValidPhoneNumber(whatsappSettings.senderNumber)) {
+      alert('Please enter a valid phone number in international format (e.g., +27711234567)');
+      return;
+    }
+    
     // In a real app, this would save to a backend
     alert('WhatsApp settings updated successfully!');
   };

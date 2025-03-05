@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { mockCandidates } from '../data/mockData';
 import { Candidate } from '../types';
 import CandidateCard from '../components/CandidateCard';
 import ResumeViewer from '../components/ResumeViewer';
-import { Search, Filter, SortDesc, SortAsc, Download } from 'lucide-react';
+import { Search, Filter, SortDesc, SortAsc, Download, Loader2, Users } from 'lucide-react';
 
 const Candidates: React.FC = () => {
   const [candidates, setCandidates] = useState<Candidate[]>(mockCandidates);
@@ -13,8 +14,9 @@ const Candidates: React.FC = () => {
   const [sortBy, setSortBy] = useState<'score' | 'date'>('score');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
+  const filteredCandidates = useMemo(() => {
     let result = [...candidates];
     
     // Apply search filter
@@ -33,7 +35,7 @@ const Candidates: React.FC = () => {
     }
     
     // Apply sorting
-    result.sort((a, b) => {
+    return result.sort((a, b) => {
       if (sortBy === 'score') {
         return sortOrder === 'asc' ? a.score - b.score : b.score - a.score;
       } else {
@@ -42,8 +44,6 @@ const Candidates: React.FC = () => {
           : b.uploadDate.getTime() - a.uploadDate.getTime();
       }
     });
-    
-    setFilteredCandidates(result);
   }, [candidates, searchTerm, statusFilter, sortBy, sortOrder]);
 
   const handleStatusChange = (id: string, status: Candidate['status']) => {
@@ -77,6 +77,29 @@ const Candidates: React.FC = () => {
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
   };
+
+  useEffect(() => {
+    const loadCandidates = async () => {
+      setIsLoading(true);
+      try {
+        // In a real app, this would be an API call
+        // const response = await fetch('/api/candidates');
+        // const data = await response.json();
+        // setCandidates(data);
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setCandidates(mockCandidates);
+      } catch (error) {
+        console.error('Error loading candidates:', error);
+        // Handle error appropriately
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadCandidates();
+  }, []);
 
   return (
     <div>
@@ -153,24 +176,31 @@ const Candidates: React.FC = () => {
         </div>
       </div>
       
-      <div className="space-y-4">
-        {filteredCandidates.length > 0 ? (
-          filteredCandidates.map(candidate => (
-            <CandidateCard
-              key={candidate.id}
-              candidate={candidate}
-              onStatusChange={handleStatusChange}
-              onViewResume={handleViewResume}
-              onSendWhatsApp={handleSendWhatsApp}
-              onSendEmail={handleSendEmail}
-            />
-          ))
-        ) : (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <p className="text-gray-500">No candidates match your search criteria.</p>
-          </div>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
+          <span className="ml-2 text-gray-600">Loading candidates...</span>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredCandidates.length > 0 ? (
+            filteredCandidates.map(candidate => (
+              <CandidateCard
+                key={candidate.id}
+                candidate={candidate}
+                onStatusChange={handleStatusChange}
+                onViewResume={handleViewResume}
+                onSendWhatsApp={handleSendWhatsApp}
+                onSendEmail={handleSendEmail}
+              />
+            ))
+          ) : (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <p className="text-gray-500">No candidates match your search criteria.</p>
+            </div>
+          )}
+        </div>
+      )}
       
       {selectedCandidate && (
         <ResumeViewer

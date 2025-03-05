@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { 
   Chart as ChartJS, 
@@ -35,7 +35,7 @@ const Dashboard: React.FC = () => {
   const averageScore = mockCandidates.reduce((sum, candidate) => sum + candidate.score, 0) / totalCandidates;
   
   // Data for status distribution chart
-  const statusData = {
+  const statusData = useMemo(() => ({
     labels: ['New', 'Yet to Review', 'Reviewed', 'Shortlisted', 'Not Suitable (Role)', 'Not Suitable (Any)', 'Potential Star'],
     datasets: [
       {
@@ -60,7 +60,7 @@ const Dashboard: React.FC = () => {
         borderWidth: 0,
       },
     ],
-  };
+  }), [mockCandidates]);
   
   // Data for score distribution chart
   const scoreRanges = ['0-50', '51-70', '71-80', '81-90', '91-100'];

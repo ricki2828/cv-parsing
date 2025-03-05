@@ -37,10 +37,11 @@ const Layout: React.FC = () => {
             <span className="font-semibold text-lg">CV Parser Pro</span>
           </div>
           <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-md text-gray-500 hover:text-gray-600 hover:bg-gray-100"
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+            aria-label="Open sidebar"
           >
-            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+            <Menu className="h-6 w-6" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -56,9 +57,10 @@ const Layout: React.FC = () => {
               </div>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="p-2 rounded-md text-gray-500 hover:text-gray-600 hover:bg-gray-100"
+                className="p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                aria-label="Close sidebar"
               >
-                <X size={20} />
+                <X className="h-6 w-6" aria-hidden="true" />
               </button>
             </div>
             <nav className="p-4 space-y-1">

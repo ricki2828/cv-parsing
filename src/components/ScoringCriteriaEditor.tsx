@@ -126,7 +126,7 @@ const ScoringCriteriaEditor: React.FC<ScoringCriteriaEditorProps> = ({
         </div>
       </div>
 
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+      <div className="mt-4">
         <div className="flex justify-between items-center">
           <span className="font-medium">Total Weight:</span>
           <span className={`font-bold ${totalWeight === 100 ? 'text-green-600' : 'text-red-600'}`}>

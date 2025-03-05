@@ -1,30 +1,76 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FileUploader from '../components/FileUploader';
-import { ArrowRight, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowRight, CheckCircle, Loader2, Users, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { parseCVs } from '../services/cvParsingService';
+import { Candidate } from '../types';
 
 const Upload: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
-  const [processingStatus, setProcessingStatus] = useState<'idle' | 'processing' | 'complete'>('idle');
+  const [processingStatus, setProcessingStatus] = useState<'idle' | 'processing' | 'complete' | 'error'>('idle');
   const [processedCount, setProcessedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [parsedCandidates, setParsedCandidates] = useState<Partial<Candidate>[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleUploadComplete = (uploadedFiles: File[]) => {
+  const handleUploadComplete = async (uploadedFiles: File[]) => {
+    if (uploadedFiles.length === 0) return;
+    
     setFiles(uploadedFiles);
     setTotalCount(uploadedFiles.length);
     setProcessedCount(0);
     setProcessingStatus('processing');
+    setError(null);
     
-    // Simulate processing of files
-    let processed = 0;
-    const interval = setInterval(() => {
-      processed += 1;
-      setProcessedCount(processed);
+    try {
+      // Process files one by one to show progress
+      const candidates: Partial<Candidate>[] = [];
       
-      if (processed >= uploadedFiles.length) {
-        clearInterval(interval);
-        setProcessingStatus('complete');
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        const file = uploadedFiles[i];
+        try {
+          // Parse the current file
+          const candidate = await parseCVs([file]);
+          candidates.push(...candidate);
+          
+          // Update progress
+          setProcessedCount(i + 1);
+        } catch (err) {
+          console.error(`Error processing file ${file.name}:`, err);
+          // Continue with other files
+        }
       }
-    }, 1000); // Process one file per second (simulation)
+      
+      // Save the parsed candidates
+      setParsedCandidates(candidates);
+      
+      // Store in localStorage for demo purposes
+      // In a real app, you would send this to your backend
+      const existingCandidates = JSON.parse(localStorage.getItem('candidates') || '[]');
+      localStorage.setItem('candidates', JSON.stringify([
+        ...existingCandidates,
+        ...candidates.map(c => ({
+          ...c,
+          // Convert dates to strings for storage
+          uploadDate: c.uploadDate?.toISOString(),
+          experience: c.experience?.map(exp => ({
+            ...exp,
+            startDate: exp.startDate?.toISOString(),
+            endDate: exp.endDate?.toISOString() || null
+          })),
+          education: c.education?.map(edu => ({
+            ...edu,
+            graduationDate: edu.graduationDate?.toISOString()
+          }))
+        }))
+      ]));
+      
+      setProcessingStatus('complete');
+    } catch (err) {
+      console.error('Error processing files:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setProcessingStatus('error');
+    }
   };
 
   return (
@@ -102,6 +148,25 @@ const Upload: React.FC = () => {
                 </div>
               </div>
             </div>
+          ) : processingStatus === 'error' ? (
+            <div className="bg-white rounded-lg shadow-md p-6 h-full">
+              <div className="text-center mb-6">
+                <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                <h3 className="text-xl font-medium text-gray-800">Processing Error</h3>
+                <p className="text-red-600 mt-2">
+                  {error || 'There was an error processing the uploaded files.'}
+                </p>
+              </div>
+              
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setProcessingStatus('idle')}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="bg-white rounded-lg shadow-md p-6 h-full">
               <div className="text-center mb-6">
@@ -121,27 +186,27 @@ const Upload: React.FC = () => {
                   </li>
                   <li className="flex justify-between">
                     <span>High Match Candidates (80%+):</span>
-                    <span className="font-medium">{Math.floor(totalCount * 0.3)}</span>
+                    <span className="font-medium">{parsedCandidates.filter(c => (c.score || 0) >= 80).length}</span>
                   </li>
                   <li className="flex justify-between">
                     <span>Medium Match Candidates (50-79%):</span>
-                    <span className="font-medium">{Math.floor(totalCount * 0.5)}</span>
+                    <span className="font-medium">{parsedCandidates.filter(c => (c.score || 0) >= 50 && (c.score || 0) < 80).length}</span>
                   </li>
                   <li className="flex justify-between">
                     <span>Low Match Candidates (&lt;50%):</span>
-                    <span className="font-medium">{Math.floor(totalCount * 0.2)}</span>
+                    <span className="font-medium">{parsedCandidates.filter(c => (c.score || 0) < 50).length}</span>
                   </li>
                 </ul>
               </div>
               
-              <div className="flex justify-center space-x-4">
-                <a 
-                  href="/candidates" 
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 inline-flex items-center"
+              <div className="flex justify-center">
+                <Link
+                  to="/candidates"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  View All Candidates
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </a>
+                  <Users className="h-4 w-4 mr-2" />
+                  View Candidates
+                </Link>
               </div>
             </div>
           )}
