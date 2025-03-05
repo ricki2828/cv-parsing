@@ -7,8 +7,7 @@ import ResumeViewer from '../components/ResumeViewer';
 import { Search, Filter, SortDesc, SortAsc, Download, Loader2, Users } from 'lucide-react';
 
 const Candidates: React.FC = () => {
-  const [candidates, setCandidates] = useState<Candidate[]>(mockCandidates);
-  const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>(mockCandidates);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<Candidate['status'] | 'all'>('all');
   const [sortBy, setSortBy] = useState<'score' | 'date'>('score');

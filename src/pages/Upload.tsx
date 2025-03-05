@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle, Loader2, Users, AlertCircle } from 'lucide-rea
 import { Link } from 'react-router-dom';
 import { parseCVs } from '../services/cvParsingService';
 import { Candidate } from '../types';
+import { CVParser } from '../services/cvParser';
 
 const Upload: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
@@ -23,46 +24,26 @@ const Upload: React.FC = () => {
     setError(null);
     
     try {
-      // Process files one by one to show progress
       const candidates: Partial<Candidate>[] = [];
       
       for (let i = 0; i < uploadedFiles.length; i++) {
         const file = uploadedFiles[i];
         try {
-          // Parse the current file
-          const candidate = await parseCVs([file]);
-          candidates.push(...candidate);
-          
-          // Update progress
+          const candidate = await CVParser.parseCV(file);
+          candidates.push(candidate);
           setProcessedCount(i + 1);
         } catch (err) {
           console.error(`Error processing file ${file.name}:`, err);
-          // Continue with other files
         }
       }
       
-      // Save the parsed candidates
       setParsedCandidates(candidates);
       
-      // Store in localStorage for demo purposes
-      // In a real app, you would send this to your backend
+      // Store in localStorage
       const existingCandidates = JSON.parse(localStorage.getItem('candidates') || '[]');
       localStorage.setItem('candidates', JSON.stringify([
         ...existingCandidates,
-        ...candidates.map(c => ({
-          ...c,
-          // Convert dates to strings for storage
-          uploadDate: c.uploadDate?.toISOString(),
-          experience: c.experience?.map(exp => ({
-            ...exp,
-            startDate: exp.startDate?.toISOString(),
-            endDate: exp.endDate?.toISOString() || null
-          })),
-          education: c.education?.map(edu => ({
-            ...edu,
-            graduationDate: edu.graduationDate?.toISOString()
-          }))
-        }))
+        ...candidates
       ]));
       
       setProcessingStatus('complete');
